@@ -14,6 +14,7 @@ use petgraph::EdgeDirection;
 
 use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
 use theories::{bitvec, core, integer};
+use super::backend::SMTRes;
 
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
 /// "SMT Process".
@@ -55,14 +56,40 @@ pub trait SMTProc {
         let mut bytes_read = [0; 2048];
         let mut s = String::new();
         let solver = self.pipe();
+
+
         if let Some(ref mut stdout) = solver.stdout.as_mut() {
-            loop {
-                let n = stdout.read(&mut bytes_read).unwrap();
-                s = format!("{}{}",
-                            s,
-                            String::from_utf8(bytes_read[0..n].to_vec()).unwrap());
-                if n < 2048 {
-                    break;
+            let mut flag = 0;
+            while flag!=3 {
+
+                for (i,c) in stdout.bytes().enumerate() {
+                    let chr = c.unwrap() as char;
+                    s.push(chr);
+                    match chr {
+                        's' => {
+                            if flag==0 {
+                                flag=1;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        'a' => {
+                            if flag==1 {
+                                flag=2;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        't' => {
+                            if flag==2 {
+                                flag=3;
+                                return s;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        _ => { flag=0; }
+                    }
                 }
             }
         }
@@ -168,7 +195,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         assertion
     }
 
-    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S) -> bool {
+    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTRes {
         // Write out all variable definitions.
         let mut decls = Vec::new();
         for (name, val) in &self.var_map {
@@ -194,19 +221,27 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
 
         smt_proc.write("(check-sat)\n".to_owned());
-        if &smt_proc.read() == "sat\n" {
-            true
+        let read = smt_proc.read();
+        if &read == "sat" {
+            SMTRes::Sat(read)
+        } else if &read == "unsat" {
+            SMTRes::Unsat(read)
         } else {
-            false
+            SMTRes::Error(read)
         }
     }
 
     // TODO: Return type information along with the value.
-    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTResult<HashMap<Self::Idx, u64>> {
+    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes) {
         let mut result = HashMap::new();
-        if !self.check_sat(smt_proc) {
-            return Err(SMTError::Unsat);
+        let check = self.check_sat(smt_proc);
+        match check {
+            SMTRes::Sat(..) => { return (Ok(result), check.clone()); },
+            SMTRes::Unsat(..) => { return (Ok(result), check.clone()); },
+            SMTRes::Error(..) => { return (Err(SMTError::Unsat), check.clone()); }
         }
+
+
 
         smt_proc.write("(get-model)\n".to_owned());
         // XXX: For some reason we need two reads here in order to get the result from
@@ -240,6 +275,6 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
             let vname = caps.name("var").unwrap();
             result.insert(self.var_map[vname].0.clone(), val);
         }
-        Ok(result)
+        (Ok(result), check.clone())
     }
 }

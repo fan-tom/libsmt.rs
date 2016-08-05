@@ -1,7 +1,26 @@
 //! Struct and methods to interact with the Z3 solver.
 
+
+//extern crate native;
+//extern crate rustrt;
+
+//use std::io::{process, Command};
+//use native::io::file;
+///use rustrt::rtio;
+
+// for file
+/*
+use std::error::Error;
+use std::io::prelude::*;
+use std::fs::File;
+use std::os::unix::io::IntoRawFd;
+use std::path::Path;
+*/
+//f2
+
 use backends::smtlib2::SMTProc;
 use std::process::{Child, Command, Stdio};
+
 
 #[derive(Default)]
 pub struct Z3 {
@@ -18,6 +37,7 @@ impl SMTProc for Z3 {
                         .stderr(Stdio::piped())
                         .spawn()
                         .expect("Failed to spawn process");
+
         self.fd = Some(child);
     }
 
