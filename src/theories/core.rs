@@ -7,8 +7,6 @@ use backends::backend::SMTNode;
 
 #[derive(Clone, Debug)]
 pub enum OpCodes {
-    True,
-    False,
     Not,
     Imply,
     And,
