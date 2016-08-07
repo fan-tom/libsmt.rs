@@ -58,8 +58,8 @@ pub trait SMTBackend {
               P: Into<<<Self as SMTBackend>::Logic as Logic>::Sorts>;
 
     fn assert<T: Into<<<Self as SMTBackend>::Logic as Logic>::Fns>>(&mut self, T, &[Self::Idx]) -> Self::Idx;
-    fn check_sat<S: SMTProc>(&mut self, &mut S) -> SMTRes;
-    fn solve<S: SMTProc>(&mut self, &mut S) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes);
+    fn check_sat<S: SMTProc>(&mut self, &mut S, bool) -> SMTRes;
+    fn solve<S: SMTProc>(&mut self, &mut S, bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes);
 }
 
 pub trait Logic: fmt::Display + Clone + Copy {

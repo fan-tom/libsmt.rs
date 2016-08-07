@@ -195,7 +195,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         assertion
     }
 
-    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTRes {
+    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> SMTRes {
         // Write out all variable definitions.
         let mut decls = Vec::new();
         for (name, val) in &self.var_map {
@@ -216,7 +216,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
 
         for w in decls.iter().chain(assertions.iter()) {
-            print!("{}", w);
+            if debug { print!("{}", w) };
             smt_proc.write(w);
         }
 
@@ -232,15 +232,17 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
     }
 
     // TODO: Return type information along with the value.
-    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes) {
+    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes) {
         let mut result = HashMap::new();
-        let check = self.check_sat(smt_proc);
+        let check = self.check_sat(smt_proc, debug);
         match check {
             SMTRes::Sat(..) => { return (Ok(result), check.clone()); },
             SMTRes::Unsat(..) => { return (Ok(result), check.clone()); },
             SMTRes::Error(..) => { return (Err(SMTError::Unsat), check.clone()); }
         }
 
+        // below here doesnt run because of short circit return.
+        // in the future this will be implemented to return model if sat
 
 
         smt_proc.write("(get-model)\n".to_owned());
