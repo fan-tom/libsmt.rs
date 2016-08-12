@@ -109,12 +109,14 @@ impl_smt_node!(OpCodes, define vars [OpCodes::FreeVar(_)], define consts [OpCode
 #[derive(Clone, Debug)]
 pub enum Sorts {
     BitVector(usize),
+    Bool,
 }
 
 impl fmt::Display for Sorts {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match *self {
             Sorts::BitVector(ref n) => format!("(_ BitVec {})", n),
+            Sorts::Bool => format!("{}", "bool"),
         };
         write!(f, "{}", s)
     }
