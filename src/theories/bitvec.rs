@@ -69,7 +69,7 @@ impl fmt::Display for OpCodes {
             OpCodes::BvMul => "bvmul".to_owned(),
             OpCodes::BvSMulDoesNotOverflow => "bvsmul_noovfl".to_owned(),
             OpCodes::BvSMulDoesNotUnderflow => "bvsmul_noudfl".to_owned(),
-            OpCodes::BvUMulDoesOverflow => "bvumul_noovfl".to_owned(),
+            OpCodes::BvUMulDoesNotOverflow => "bvumul_noovfl".to_owned(),
             OpCodes::BvUDiv => "bvudiv".to_owned(),
             OpCodes::BvURem => "bvurem".to_owned(),
             OpCodes::BvShl => "bvshl".to_owned(),
