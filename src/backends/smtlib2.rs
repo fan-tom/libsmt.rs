@@ -66,11 +66,33 @@ pub trait SMTProc {
                     let chr = c.unwrap() as char;
                     s.push(chr);
 
-                    if s.ends_with("sat") {
                         flag=3;
-                    }
-
                     
+                    match chr {
+                        's' => {
+                            if flag==0 {
+                                flag=1;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        'a' => {
+                            if flag==1 {
+                                flag=2;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        't' => {
+                            if flag==2 {
+                                flag=3;
+                                return s;
+                            } else {
+                                flag=0;
+                            }
+                        },
+                        _ => { flag=0; }
+                    }
                 }
             }
         }
