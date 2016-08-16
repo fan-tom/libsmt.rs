@@ -60,36 +60,17 @@ pub trait SMTProc {
 
         if let Some(ref mut stdout) = solver.stdout.as_mut() {
             let mut flag = 0;
-            while flag!=3 {
 
+            while flag!=3 {
                 for (i,c) in stdout.bytes().enumerate() {
                     let chr = c.unwrap() as char;
                     s.push(chr);
-                    match chr {
-                        's' => {
-                            if flag==0 {
-                                flag=1;
-                            } else {
-                                flag=0;
-                            }
-                        },
-                        'a' => {
-                            if flag==1 {
-                                flag=2;
-                            } else {
-                                flag=0;
-                            }
-                        },
-                        't' => {
-                            if flag==2 {
-                                flag=3;
-                                return s;
-                            } else {
-                                flag=0;
-                            }
-                        },
-                        _ => { flag=0; }
+
+                    if s.ends_with("sat") {
+                        flag=3;
                     }
+
+                    
                 }
             }
         }
