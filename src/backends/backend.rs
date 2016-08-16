@@ -17,9 +17,9 @@ pub enum SMTError {
 
 #[derive(Clone, Debug)]
 pub enum SMTRes {
-    Sat(String),
-    Unsat(String),
-    Error(String),
+    Sat(String, Option<String>),
+    Unsat(String, Option<String>),
+    Error(String, Option<String>),
 }
 
 
