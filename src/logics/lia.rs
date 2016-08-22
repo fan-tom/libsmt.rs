@@ -13,8 +13,10 @@ define_sorts_for_logic!(LIA_Sorts,
                  );
 
 define_fns_for_logic!(LIA_Fn,
-                      IntOps -> integer::OpCodes,
+                      map { IntOps -> integer::OpCodes,
                       CoreOps -> core::OpCodes
+                      },
+                      obool { }
                      );
 
 #[derive(Clone, Copy, Debug)]

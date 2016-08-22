@@ -70,4 +70,9 @@ pub trait SMTNode: fmt::Display {
     fn is_fn(&self) -> bool {
         !self.is_var() && !self.is_const()
     }
+
+    // FIXME
+    fn is_bool(&self) -> bool {
+        false
+    }
 }

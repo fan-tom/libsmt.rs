@@ -38,7 +38,7 @@ macro_rules! define_sorts_for_logic {
 
 #[macro_export]
 macro_rules! define_fns_for_logic {
-    ($logic: ident, $($variant: ident -> $sort: ty),*) => {
+    ($logic: ident, map { $($variant: ident -> $sort: ty),* }, obool { $($ff: pat => $b: expr),* }) => {
         #[derive(Clone, Debug)]
         pub enum $logic {
             $(
@@ -79,6 +79,15 @@ macro_rules! define_fns_for_logic {
                     $(
                         $logic::$variant(ref inner) => inner.is_const(),
                     )*
+                }
+            }
+
+            fn is_bool(&self) -> bool {
+                match *self {
+                    $(
+                        $ff => $b,
+                    )*
+                    _ => false,
                 }
             }
         }

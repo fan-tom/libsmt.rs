@@ -14,8 +14,10 @@ define_sorts_for_logic!(QF_BV_Sorts,
                  );
 
 define_fns_for_logic!(QF_BV_Fn,
-                      BVOps -> bitvec::OpCodes,
+                      map { BVOps -> bitvec::OpCodes,
                       CoreOps -> core::OpCodes
+                      },
+                      obool { }
                      );
 
 define_logic!(QF_BV,
