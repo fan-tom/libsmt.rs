@@ -6,13 +6,11 @@
 use std::process::{Child};
 use std::collections::{HashMap};
 use std::io::{Read, Write};
-use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
 
-use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
-use theories::{bitvec, core, integer};
+use backends::backend::{Logic, SMTBackend, SMTNode, SMTResult};
 use super::backend::SMTRes;
 
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
