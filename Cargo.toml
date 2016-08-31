@@ -1,8 +1,23 @@
 [package]
-name = "libsmt"
+name = "rustproof-libsmt"
 version = "0.1.0"
-authors = ["Sushant <sushant.dinesh94@gmail.com>",
-		   "Karthik Senthil <karthik.senthil94@gmail.com>"]
+authors = [
+            "Sushant <sushant.dinesh94@gmail.com>",
+            "Karthik Senthil <karthik.senthil94@gmail.com>",
+            "Matthew Slocum <arco000@gmail.com>",
+            "Sami Sahli <samisahli@me.com>",
+            "Vincent Schuster <vincent_schuster@outlook.com>",
+            "Matthew O'Brien <matthewo@pdx.edu>",
+            "Michael Salter <salterm@pdx.edu>",
+            "Bradley Rasmussen <rasmbj@pdx.edu>",
+            "Drew Gohman <dgohman@pdx.edu>"
+]
+license = "Apache-2.0/MIT"
+description = "Rust bindings for z3 as utilized by RustProof."
+repository = "https://github.com/Rust-Proof/libsmt.rs"
+readme = "README.md"
+keywords = ["smt", "verification", "z3", "solver", "satisfiability"]
+exclude = [".travis.yml"]
 
 [[example]]
 name = "bitvec_x86_64"

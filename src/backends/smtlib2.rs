@@ -3,17 +3,14 @@
 //! This backend outputs the constraints in standard smt-lib2 format. Hence,
 //! any solver that supports this format maybe used to solve for constraints.
 
-use std::process::{Child, Command, Stdio};
-use std::collections::{HashMap, VecDeque};
+use std::process::{Child};
+use std::collections::{HashMap};
 use std::io::{Read, Write};
-use std::fmt;
-use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
 
-use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
-use theories::{bitvec, core, integer};
+use backends::backend::{Logic, SMTBackend, SMTNode, SMTResult};
 use super::backend::SMTRes;
 
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
@@ -137,7 +134,7 @@ pub struct SMTLib2<T: Logic> {
 
 impl<L: Logic> SMTLib2<L> {
     pub fn new(logic: Option<L>) -> SMTLib2<L> {
-        let mut solver = SMTLib2 {
+        let solver = SMTLib2 {
             logic: logic,
             gr: Graph::new(),
             var_index: 0,
