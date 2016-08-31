@@ -3,7 +3,7 @@ name = "rustproof-libsmt"
 version = "0.1.0"
 authors = [
 			"Sushant <sushant.dinesh94@gmail.com>",
-		    "Karthik Senthil <karthik.senthil94@gmail.com>"
+		    "Karthik Senthil <karthik.senthil94@gmail.com>",
             "Matthew Slocum <arco000@gmail.com>",
             "Sami Sahli <samisahli@me.com>",
             "Vincent Schuster <vincent_schuster@outlook.com>",
