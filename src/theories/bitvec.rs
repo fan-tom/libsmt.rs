@@ -19,6 +19,9 @@ pub enum OpCodes {
     BvNeg,
     BvAdd,
     BvMul,
+    BvSMulDoesNotOverflow,
+    BvSMulDoesNotUnderflow,
+    BvUMulDoesNotOverflow,
     BvUDiv,
     BvURem,
     BvShl,
@@ -63,6 +66,9 @@ impl fmt::Display for OpCodes {
             OpCodes::BvNeg => "bvneg".to_owned(),
             OpCodes::BvAdd => "bvadd".to_owned(),
             OpCodes::BvMul => "bvmul".to_owned(),
+            OpCodes::BvSMulDoesNotOverflow => "bvsmul_noovfl".to_owned(),
+            OpCodes::BvSMulDoesNotUnderflow => "bvsmul_noudfl".to_owned(),
+            OpCodes::BvUMulDoesNotOverflow => "bvumul_noovfl".to_owned(),
             OpCodes::BvUDiv => "bvudiv".to_owned(),
             OpCodes::BvURem => "bvurem".to_owned(),
             OpCodes::BvShl => "bvshl".to_owned(),
@@ -102,12 +108,14 @@ impl_smt_node!(OpCodes, define vars [OpCodes::FreeVar(_)], define consts [OpCode
 #[derive(Clone, Debug)]
 pub enum Sorts {
     BitVector(usize),
+    Bool,
 }
 
 impl fmt::Display for Sorts {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match *self {
             Sorts::BitVector(ref n) => format!("(_ BitVec {})", n),
+            Sorts::Bool => format!("{}", "bool"),
         };
         write!(f, "{}", s)
     }

@@ -2,8 +2,8 @@
 name = "rustproof-libsmt"
 version = "0.1.0"
 authors = [
-			"Sushant <sushant.dinesh94@gmail.com>",
-		    "Karthik Senthil <karthik.senthil94@gmail.com>",
+            "Sushant <sushant.dinesh94@gmail.com>",
+            "Karthik Senthil <karthik.senthil94@gmail.com>",
             "Matthew Slocum <arco000@gmail.com>",
             "Sami Sahli <samisahli@me.com>",
             "Vincent Schuster <vincent_schuster@outlook.com>",
@@ -17,9 +17,7 @@ description = "Rust bindings for z3 as utilized by RustProof."
 repository = "https://github.com/Rust-Proof/libsmt.rs"
 readme = "README.md"
 keywords = ["smt", "verification", "z3", "solver", "satisfiability"]
-exclude = [
-			".travis.yml",
-]
+exclude = [".travis.yml"]
 
 [[example]]
 name = "bitvec_x86_64"
@@ -31,6 +29,10 @@ test = true
 
 [[example]]
 name = "simple_example"
+test = true
+
+[[example]]
+name = "bajr"
 test = true
 
 [dependencies]

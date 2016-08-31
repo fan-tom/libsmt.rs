@@ -12,6 +12,8 @@ use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
 
 use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
+use theories::{bitvec, core, integer};
+use super::backend::SMTRes;
 
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
 /// "SMT Process".
@@ -66,6 +68,56 @@ pub trait SMTProc {
         }
         s
     }
+
+    // A specific read taylored to output from (check-sat) z3 command
+    fn read_checksat_output(&mut self) -> String {
+        // Buffer to read into
+        let mut buf = String::new();
+        // Read from z3's stdout
+        if let Some(ref mut stdout) = self.pipe().stdout.as_mut() {
+            loop {
+                for (_,c) in stdout.bytes().enumerate() {
+                    let chr = c.unwrap() as char;
+                    buf.push(chr);
+                    if buf.ends_with("sat") {
+                        return buf;
+                    }
+                }
+            }
+        }
+        unreachable!()
+    }
+
+    // A specific read taylored to output from (get-model) z3 command
+    fn read_getmodel_output(&mut self) -> String {
+        // Buffer to read into
+        let mut buf = String::new();
+        // Read from z3's stdout
+        if let Some(ref mut stdout) = self.pipe().stdout.as_mut() {
+            // Count for paren matching (to detect end of output)
+            let mut count = 0;
+            loop {
+                for (_,c) in stdout.bytes().enumerate() {
+                    let chr = c.unwrap() as char;
+                    // Hotfix to deal with newline remaining in the buffer
+                    if chr=='\n' && count==0 {
+                        continue;
+                    }
+                    buf.push(chr);
+                    match chr {
+                        '(' => { count+=1; },
+                        ')' => { count-=1; },
+                        _ => {}
+                    }
+                    if count==0 {
+                        return buf;
+                    }
+                }
+            }
+        }
+        unreachable!()
+    }
+
 }
 
 #[derive(Clone, Debug)]
@@ -166,7 +218,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         assertion
     }
 
-    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S) -> bool {
+    fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> SMTRes {
         // Write out all variable definitions.
         let mut decls = Vec::new();
         for (name, val) in &self.var_map {
@@ -187,57 +239,35 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
 
         for w in decls.iter().chain(assertions.iter()) {
-            print!("{}", w);
+            if debug { print!("{}", w) };
             smt_proc.write(w);
         }
 
         smt_proc.write("(check-sat)\n".to_owned());
-        if &smt_proc.read() == "sat\n" {
-            true
+        let read = smt_proc.read_checksat_output();
+        if &read == "sat" {
+            SMTRes::Sat(read, None)
+        } else if &read == "unsat" {
+            SMTRes::Unsat(read, None)
         } else {
-            false
+            SMTRes::Error(read, None)
         }
     }
 
     // TODO: Return type information along with the value.
-    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTResult<HashMap<Self::Idx, u64>> {
+    fn solve<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes) {
         let mut result = HashMap::new();
-        if !self.check_sat(smt_proc) {
-            return Err(SMTError::Unsat);
+        let check_sat = self.check_sat(smt_proc, debug);
+        // If the VC was satisfyable get the model
+        match check_sat {
+            SMTRes::Sat(ref res, _) => {
+                smt_proc.write("(get-model)\n".to_owned());
+                let read_result = smt_proc.read_getmodel_output();
+                return (Ok(result), SMTRes::Sat(res.clone(), Some(read_result)));
+            },
+            _ => {}
         }
 
-        smt_proc.write("(get-model)\n".to_owned());
-        // XXX: For some reason we need two reads here in order to get the result from
-        // the SMT solver. Need to look into the reason for this. This might stop
-        // working in the
-        // future.
-        let _ = smt_proc.read();
-        let read_result = smt_proc.read();
-
-        // Example of result from the solver:
-        // (model
-        //  (define-fun y () Int
-        //    9)
-        //  (define-fun x () Int
-        //    10)
-        // )
-        let re = Regex::new(r"\s+\(define-fun (?P<var>[0-9a-zA-Z_]+) \(\) [(]?[ _a-zA-Z0-9]+[)]?\n\s+(?P<val>([0-9]+|#x[0-9a-f]+|#b[01]+))")
-                     .unwrap();
-        for caps in re.captures_iter(&read_result) {
-            // Here the caps.name("val") can be a hex value, or a binary value or a decimal
-            // value. We need to parse the output to a u64 accordingly.
-            let val_str = caps.name("val").unwrap();
-            let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
-                          u64::from_str_radix(&val_str[2..], 16)
-                      } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
-                          u64::from_str_radix(&val_str[2..], 2)
-                      } else {
-                          val_str.parse::<u64>()
-                      }
-                      .unwrap();
-            let vname = caps.name("var").unwrap();
-            result.insert(self.var_map[vname].0.clone(), val);
-        }
-        Ok(result)
+        (Ok(result), check_sat.clone())
     }
 }

@@ -6,8 +6,6 @@ use backends::backend::SMTNode;
 
 #[derive(Clone, Debug)]
 pub enum OpCodes {
-    True,
-    False,
     Not,
     Imply,
     And,
@@ -16,6 +14,7 @@ pub enum OpCodes {
     Cmp,
     Distinct,
     ITE,
+    Const(bool),
     FreeVar(String)
 }
 
@@ -30,15 +29,14 @@ impl fmt::Display for OpCodes {
             OpCodes::Cmp => "=".to_owned(),
             OpCodes::Distinct => "distinct".to_owned(),
             OpCodes::ITE => "ite".to_owned(),
-            OpCodes::True => "true".to_owned(),
-            OpCodes::False => "false".to_owned(),
+            OpCodes::Const(val) => format!("{}", val),
             OpCodes::FreeVar(ref s) => s.clone(),
         };
         write!(f, "{}", s)
     }
 }
 
-impl_smt_node!(OpCodes, define vars [OpCodes::FreeVar(_)], define consts []);
+impl_smt_node!(OpCodes, define vars [OpCodes::FreeVar(_)], define consts [OpCodes::Const(_)]);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Sorts {

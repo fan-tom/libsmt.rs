@@ -14,6 +14,14 @@ pub enum SMTError {
     AssertionError(String),
 }
 
+#[derive(Clone, Debug)]
+pub enum SMTRes {
+    Sat(String, Option<String>),
+    Unsat(String, Option<String>),
+    Error(String, Option<String>),
+}
+
+
 pub type SMTResult<T> = Result<T, SMTError>;
 
 /// Trait a backend should implement to support SMT solving.
@@ -49,14 +57,14 @@ pub trait SMTBackend {
               P: Into<<<Self as SMTBackend>::Logic as Logic>::Sorts>;
 
     fn assert<T: Into<<<Self as SMTBackend>::Logic as Logic>::Fns>>(&mut self, T, &[Self::Idx]) -> Self::Idx;
-    fn check_sat<S: SMTProc>(&mut self, &mut S) -> bool;
-    fn solve<S: SMTProc>(&mut self, &mut S) -> SMTResult<HashMap<Self::Idx, u64>>;
+    fn check_sat<S: SMTProc>(&mut self, &mut S, bool) -> SMTRes;
+    fn solve<S: SMTProc>(&mut self, &mut S, bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes);
 }
 
 pub trait Logic: fmt::Display + Clone + Copy {
     type Fns: SMTNode + fmt::Display + Debug + Clone;
     type Sorts: fmt::Display + Debug + Clone;
-    
+
     fn free_var<T: AsRef<str>>(T, Self::Sorts) -> Self::Fns;
 }
 
