@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt;
 
-use theories::core;
 use backends::smtlib2::SMTProc;
 
 #[derive(Clone, Debug)]
