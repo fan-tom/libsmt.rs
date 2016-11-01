@@ -6,6 +6,7 @@
 use std::process::{Child};
 use std::collections::{HashMap};
 use std::io::{Read, Write};
+use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
@@ -269,7 +270,6 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
                 let re = Regex::new(r"\s+\(define-fun (?P<var>[0-9a-zA-Z_]+) \(\) [(]?[ _a-zA-Z0-9]+[)]?\n\s+(?P<val>([0-9]+|#x[0-9a-f]+|#b[01]+))")
                              .unwrap();
 
-                /*
                 for caps in re.captures_iter(&read_result) {
                     // Here the caps.name("val") can be a hex value, or a binary value or a decimal
                     // value. We need to parse the output to a u64 accordingly.
@@ -286,7 +286,6 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
                     result.insert(self.var_map[vname].0.clone(), val);
 
                 }
-                */
                 smt_proc.write("(exit)\n".to_owned());
                 return (Ok(result), SMTRes::Sat(res.clone(), Some(read_result)));
             },
