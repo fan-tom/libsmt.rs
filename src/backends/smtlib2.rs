@@ -286,12 +286,10 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
                     result.insert(self.var_map[vname].0.clone(), val);
 
                 }
-                smt_proc.write("(exit)\n".to_owned());
                 return (Ok(result), SMTRes::Sat(res.clone(), Some(read_result)));
             },
             _ => {}
         }
-        smt_proc.write("(exit)\n".to_owned());
         (Ok(result), check_sat.clone())
     }
 }
