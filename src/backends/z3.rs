@@ -29,7 +29,7 @@ pub struct Z3 {
 }
 
 impl Z3 {
-    fn new_with_binary(path: &str) -> Z3 {
+    pub fn new_with_binary(path: &str) -> Z3 {
         let mut z3 = Z3 {
             path: Some(String::from(path)),
             fd: None,
