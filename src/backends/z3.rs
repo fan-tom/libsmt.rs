@@ -24,12 +24,28 @@ use std::process::{Child, Command, Stdio};
 
 #[derive(Default)]
 pub struct Z3 {
+    path: Option<String>,
     fd: Option<Child>,
+}
+
+impl Z3 {
+    fn new_with_binary(path: &str) -> Z3 {
+        let mut z3 = Z3 {
+            path: Some(String::from(path)),
+            fd: None,
+        };
+        z3.init();
+        z3
+    }
 }
 
 impl SMTProc for Z3 {
     fn init(&mut self) {
-        let (cmd, args) = ("z3", &["-in", "-smt2"]);
+        let cmd = match self.path {
+            Some(ref path) => path,
+            None => "z3"
+        };
+        let args = &["-in", "-smt2"];
         let child = Command::new(cmd)
                         .args(args)
                         .stdout(Stdio::piped())
