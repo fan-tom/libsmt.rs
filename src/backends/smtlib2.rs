@@ -14,6 +14,12 @@ use petgraph::EdgeDirection;
 use backends::backend::{Logic, SMTBackend, SMTNode, SMTResult};
 use super::backend::SMTRes;
 
+macro_rules! must {
+    ($e: expr) => {
+        match $e { Err(_) => panic!("write failed"), Ok(_) => {} }
+    }
+}
+
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
 /// "SMT Process".
 ///
@@ -205,7 +211,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
             return;
         }
         let logic = self.logic.unwrap().clone();
-        smt_proc.write(format!("(set-logic {})\n", logic));
+        must!(smt_proc.write(format!("(set-logic {})\n", logic)));
     }
 
     fn assert<T: Into<L::Fns>>(&mut self, assert: T, ops: &[Self::Idx]) -> Self::Idx {
@@ -239,10 +245,10 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
 
         for w in decls.iter().chain(assertions.iter()) {
             if debug { print!("{}", w) };
-            smt_proc.write(w);
+            must!(smt_proc.write(w));
         }
 
-        smt_proc.write("(check-sat)\n".to_owned());
+        must!(smt_proc.write("(check-sat)\n".to_owned()));
         let read = smt_proc.read_checksat_output();
         if &read == "sat" {
             SMTRes::Sat(read, None)
@@ -260,7 +266,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         // If the VC was satisfyable get the model
         match check_sat {
             SMTRes::Sat(ref res, _) => {
-                smt_proc.write("(get-model)\n".to_owned());
+                must!(smt_proc.write("(get-model)\n".to_owned()));
                 // XXX: For some reason we need two reads here in order to get the result from
                 // the SMT solver. Need to look into the reason for this. This might stop
                 // working in the
