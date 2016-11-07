@@ -45,6 +45,6 @@ pub enum Sorts {
 
 impl fmt::Display for Sorts {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", "bool")
+        write!(f, "{}", "Bool")
     }
 }
