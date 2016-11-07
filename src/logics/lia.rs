@@ -31,10 +31,9 @@ impl Logic for LIA {
     type Sorts = LIA_Sorts;
 
     fn free_var<T: AsRef<str>>(name: T, ty: LIA_Sorts) -> Self::Fns {
-        let fv = match ty {
-            LIA_Sorts::Int(_) => integer::OpCodes::FreeVar(name.as_ref().to_owned()),
-            LIA_Sorts::Core(_) => unreachable!(),
-        };
-        LIA_Fn::IntOps(fv)
+        match ty {
+            LIA_Sorts::Int(_) => LIA_Fn::IntOps(integer::OpCodes::FreeVar(name.as_ref().to_owned())),
+            LIA_Sorts::Core(_) => LIA_Fn::CoreOps(core::OpCodes::FreeVar(name.as_ref().to_owned())),
+        }
     }
 }
