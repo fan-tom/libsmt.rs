@@ -18,7 +18,7 @@ pub enum OpCodes {
     Add,
     Sub,
     Neg,
-    Const(u64),
+    Const(i64),
     FreeVar(String),
 }
 
