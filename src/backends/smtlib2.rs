@@ -11,6 +11,7 @@ use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
+use petgraph::visit::EdgeRef;
 
 use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
 use theories::{bitvec, core, integer};
@@ -100,7 +101,9 @@ impl<L: Logic> SMTLib2<L> {
     pub fn expand_assertion(&self, ni: NodeIndex) -> String {
         let mut children = self.gr
                                .edges_directed(ni, EdgeDirection::Outgoing)
-                               .map(|(other, edge)| {
+                               .map(|edge_ref| {
+                                   let edge = edge_ref.weight();
+                                   let other = edge_ref.target();
                                    match *edge {
                                        EdgeData::EdgeOrder(ref i) => (other, *i),
                                    }
@@ -231,7 +234,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         for caps in re.captures_iter(&read_result) {
             // Here the caps.name("val") can be a hex value, or a binary value or a decimal
             // value. We need to parse the output to a u64 accordingly.
-            let val_str = caps.name("val").unwrap();
+            let val_str = caps.name("val").unwrap().as_str();
             let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
                           u64::from_str_radix(&val_str[2..], 16)
                       } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
@@ -240,7 +243,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
                           val_str.parse::<u64>()
                       }
                       .unwrap();
-            let vname = caps.name("var").unwrap();
+            let vname = caps.name("var").unwrap().as_str();
             result.insert(self.var_map[vname].0.clone(), val);
         }
         Ok(result)
