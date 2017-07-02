@@ -8,16 +8,29 @@ use theories::{integer, core};
 use backends::backend::{Logic, SMTNode};
 
 define_sorts_for_logic!(LIA_Sorts,
-                  Int -> integer::Sorts,
-                  Core -> core::Sorts
-                 );
+                        Int -> integer::Sorts,
+                        Core -> core::Sorts
+                        );
 
 define_fns_for_logic!(LIA_Fn,
                       map { IntOps -> integer::OpCodes,
                       CoreOps -> core::OpCodes
                       },
-                      obool { }
-                     );
+                      obool { LIA_Fn::CoreOps(core::OpCodes::True) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::False) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Not) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Imply) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::And) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Or) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Xor) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Cmp) => true,
+                      LIA_Fn::CoreOps(core::OpCodes::Distinct) => true,
+                      LIA_Fn::IntOps(integer::OpCodes::Lt) => true,
+                      LIA_Fn::IntOps(integer::OpCodes::Gt) => true,
+                      LIA_Fn::IntOps(integer::OpCodes::Lte) => true,
+                      LIA_Fn::IntOps(integer::OpCodes::Gte) => true
+                      }
+                      );
 
 #[derive(Clone, Copy, Debug)]
 pub struct LIA;
