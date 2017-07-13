@@ -11,6 +11,7 @@ use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
+use petgraph::visit::EdgeRef;
 
 use backends::backend::{Logic, SMTBackend, SMTError, SMTNode, SMTResult};
 use theories::{bitvec, core, integer};
@@ -100,7 +101,9 @@ impl<L: Logic> SMTLib2<L> {
     pub fn expand_assertion(&self, ni: NodeIndex) -> String {
         let mut children = self.gr
                                .edges_directed(ni, EdgeDirection::Outgoing)
-                               .map(|(other, edge)| {
+                               .map(|edge_ref| {
+                                   let edge = edge_ref.weight();
+                                   let other = edge_ref.target();
                                    match *edge {
                                        EdgeData::EdgeOrder(ref i) => (other, *i),
                                    }
@@ -129,6 +132,32 @@ impl<L: Logic> SMTLib2<L> {
 
     pub fn new_const<T: Into<L::Fns>>(&mut self, cval: T) -> NodeIndex {
         self.gr.add_node(cval.into())
+    }
+
+    pub fn generate_asserts(&self) -> String {
+        // Write out all variable definitions.
+        let mut decls = Vec::new();
+        for (name, val) in &self.var_map {
+            let ni = &val.0;
+            let ty = &val.1;
+            if self.gr[*ni].is_var() {
+                decls.push(format!("(declare-fun {} () {})\n", name, ty));
+            }
+        }
+        // Identify root nodes and generate the assertion strings.
+        let mut assertions = Vec::new();
+        for idx in self.gr.node_indices() {
+            if self.gr.edges_directed(idx, EdgeDirection::Incoming).collect::<Vec<_>>().is_empty() {
+                if self.gr[idx].is_fn() && self.gr[idx].is_bool() {
+                    assertions.push(format!("(assert {})\n", self.expand_assertion(idx)));
+                }
+            }
+        }
+        let mut result = String::new();
+        for w in decls.iter().chain(assertions.iter()) {
+            result = format!("{}{}", result, w)
+        }
+        result
     }
 }
 
@@ -169,30 +198,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
     }
 
     fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S) -> bool {
-        // Write out all variable definitions.
-        let mut decls = Vec::new();
-        for (name, val) in &self.var_map {
-            let ni = &val.0;
-            let ty = &val.1;
-            if self.gr[*ni].is_var() {
-                decls.push(format!("(declare-fun {} () {})\n", name, ty));
-            }
-        }
-        // Identify root nodes and generate the assertion strings.
-        let mut assertions = Vec::new();
-        for idx in self.gr.node_indices() {
-            if self.gr.edges_directed(idx, EdgeDirection::Incoming).collect::<Vec<_>>().is_empty() {
-                if self.gr[idx].is_fn() {
-                    assertions.push(format!("(assert {})\n", self.expand_assertion(idx)));
-                }
-            }
-        }
-
-        for w in decls.iter().chain(assertions.iter()) {
-            print!("{}", w);
-            smt_proc.write(w);
-        }
-
+        smt_proc.write(self.generate_asserts());
         smt_proc.write("(check-sat)\n".to_owned());
         if &smt_proc.read() == "sat\n" {
             true
@@ -228,7 +234,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         for caps in re.captures_iter(&read_result) {
             // Here the caps.name("val") can be a hex value, or a binary value or a decimal
             // value. We need to parse the output to a u64 accordingly.
-            let val_str = caps.name("val").unwrap();
+            let val_str = caps.name("val").unwrap().as_str();
             let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
                           u64::from_str_radix(&val_str[2..], 16)
                       } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
@@ -237,7 +243,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
                           val_str.parse::<u64>()
                       }
                       .unwrap();
-            let vname = caps.name("var").unwrap();
+            let vname = caps.name("var").unwrap().as_str();
             result.insert(self.var_map[vname].0.clone(), val);
         }
         Ok(result)
