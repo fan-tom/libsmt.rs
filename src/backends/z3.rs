@@ -27,6 +27,11 @@ impl SMTProc for Z3 {
         }
         self.fd.as_mut().unwrap()
     }
+
+    // Because of the z3 buffering issue.
+    fn proc_specific_read(&mut self) {
+        self.read();
+    }
 }
 
 #[cfg(test)]
@@ -48,8 +53,8 @@ mod test {
         solver.assert(core::OpCodes::Cmp, &[x, c]);
         solver.assert(integer::OpCodes::Gt, &[x, y]);
         let result = solver.solve(&mut z3).unwrap();
-        assert_eq!(result[&x], 10);
         assert_eq!(result[&y], 9);
+        assert_eq!(result[&x], 10);
     }
 
     #[test]

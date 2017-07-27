@@ -25,4 +25,5 @@ pub mod backends {
     pub mod backend;
     pub mod smtlib2;
     pub mod z3;
+    pub mod boolector;
 }
