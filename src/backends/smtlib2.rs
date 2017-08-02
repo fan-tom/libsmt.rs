@@ -106,6 +106,11 @@ impl<L: Logic> SMTLib2<L> {
         self.gr.node_weight(ni).unwrap()
     }
 
+    pub fn get_operands(&self, ni: NodeIndex) -> Vec<NodeIndex> {
+        self.gr.neighbors_directed(ni, EdgeDirection::Outgoing)
+            .collect::<Vec<_>>()
+    }
+
     // Recursive function that builds up the assertion string from the tree.
     pub fn expand_assertion(&self, ni: NodeIndex) -> String {
         let mut children = self.gr
@@ -216,6 +221,24 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
     }
 
+    fn simplify<S: SMTProc>(&mut self, smt_proc: &mut S, ni: Self::Idx) -> SMTResult<u64> {
+        smt_proc.write(format!("(simplify {})\n", self.expand_assertion(ni)));
+        
+        smt_proc.proc_specific_read();
+        let val_str = smt_proc.read();
+       
+        let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
+                          u64::from_str_radix(&val_str[2..], 16)
+                      } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
+                          u64::from_str_radix(&val_str[2..], 2)
+                      } else {
+                          val_str.parse::<u64>()
+                      }
+                      .unwrap();
+
+        Ok(val)
+    }
+
     // TODO: Return type information along with the value.
     fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTResult<HashMap<Self::Idx, u64>> {
         let mut result = HashMap::new();
@@ -224,8 +247,8 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
 
         smt_proc.write("(get-model)\n".to_owned());
+
         smt_proc.proc_specific_read();
-        
         let read_result = smt_proc.read();
 
         // Example of result from the solver(Could very well vary):
