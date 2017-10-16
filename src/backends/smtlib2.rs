@@ -43,6 +43,11 @@ pub trait SMTProc {
         Ok(())
     }
 
+    // Helper function to insert a process specific read if needed 
+    // at places where buffering is an issue.
+    fn proc_specific_read(&mut self) {
+    }
+
     fn read(&mut self) -> String {
         // XXX: This read may block indefinitely if there is nothing on the pipe to be
         // read. To prevent this we need a timeout mechanism after which we should
@@ -95,6 +100,15 @@ impl<L: Logic> SMTLib2<L> {
             idx_map: HashMap::new(),
         };
         solver
+    }
+
+    pub fn get_node_info(&self, ni: NodeIndex) -> &L::Fns {
+        self.gr.node_weight(ni).unwrap()
+    }
+
+    pub fn get_operands(&self, ni: NodeIndex) -> Vec<NodeIndex> {
+        self.gr.neighbors_directed(ni, EdgeDirection::Outgoing)
+            .collect::<Vec<_>>()
     }
 
     // Recursive function that builds up the assertion string from the tree.
@@ -207,6 +221,24 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
     }
 
+    fn simplify<S: SMTProc>(&mut self, smt_proc: &mut S, ni: Self::Idx) -> SMTResult<u64> {
+        smt_proc.write(format!("(simplify {})\n", self.expand_assertion(ni)));
+        
+        smt_proc.proc_specific_read();
+        let val_str = smt_proc.read();
+       
+        let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
+                          u64::from_str_radix(&val_str[2..], 16)
+                      } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
+                          u64::from_str_radix(&val_str[2..], 2)
+                      } else {
+                          val_str.parse::<u64>()
+                      }
+                      .unwrap();
+
+        Ok(val)
+    }
+
     // TODO: Return type information along with the value.
     fn solve<S: SMTProc>(&mut self, smt_proc: &mut S) -> SMTResult<HashMap<Self::Idx, u64>> {
         let mut result = HashMap::new();
@@ -215,26 +247,22 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
 
         smt_proc.write("(get-model)\n".to_owned());
-        // XXX: For some reason we need two reads here in order to get the result from
-        // the SMT solver. Need to look into the reason for this. This might stop
-        // working in the
-        // future.
-        let _ = smt_proc.read();
+
+        smt_proc.proc_specific_read();
         let read_result = smt_proc.read();
 
-        // Example of result from the solver:
+        // Example of result from the solver(Could very well vary):
         // (model
-        //  (define-fun y () Int
-        //    9)
-        //  (define-fun x () Int
-        //    10)
+        //   (define-fun y () Int 9)
+        //   (define-fun x () Int 10)
         // )
-        let re = Regex::new(r"\s+\(define-fun (?P<var>[0-9a-zA-Z_]+) \(\) [(]?[ _a-zA-Z0-9]+[)]?\n\s+(?P<val>([0-9]+|#x[0-9a-f]+|#b[01]+))")
+        let re = Regex::new(r"\s+\(define-fun (?P<var>[0-9a-zA-Z_]+) \(\) [(]?[ _a-zA-Z0-9]+[)]?\n??\s+(?P<val>(-?[0-9]+|#x[0-9a-f]+|#b[01]+))")
                      .unwrap();
         for caps in re.captures_iter(&read_result) {
             // Here the caps.name("val") can be a hex value, or a binary value or a decimal
             // value. We need to parse the output to a u64 accordingly.
             let val_str = caps.name("val").unwrap().as_str();
+
             let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
                           u64::from_str_radix(&val_str[2..], 16)
                       } else if val_str.len() > 2 && &val_str[0..2] == "#b" {

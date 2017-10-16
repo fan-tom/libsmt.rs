@@ -44,12 +44,13 @@ pub trait SMTBackend {
 
     fn set_logic<S: SMTProc>(&mut self, &mut S);
     //fn declare_fun<T: AsRef<str>>(&mut self, Option<T>, Option<Vec<Type>>, Type) -> Self::Idx;
-
+    
     fn new_var<T, P>(&mut self, Option<T>, P) -> Self::Idx
         where T: AsRef<str>,
               P: Into<<<Self as SMTBackend>::Logic as Logic>::Sorts>;
 
     fn assert<T: Into<<<Self as SMTBackend>::Logic as Logic>::Fns>>(&mut self, T, &[Self::Idx]) -> Self::Idx;
+    fn simplify<S: SMTProc>(&mut self, &mut S, Self::Idx) -> SMTResult<u64>;
     fn check_sat<S: SMTProc>(&mut self, &mut S) -> bool;
     fn solve<S: SMTProc>(&mut self, &mut S) -> SMTResult<HashMap<Self::Idx, u64>>;
 }

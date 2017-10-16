@@ -43,7 +43,6 @@ define_logic!(QF_ABV,
               }
               );
 
-
 // Helper methods that help in contruction of array and bitvector types.
 pub fn array_sort<T: Into<QF_ABV_Sorts>, P: Into<QF_ABV_Sorts>>(idx: T, data: P) -> QF_ABV_Sorts {
     QF_ABV_Sorts::ArrayEx(array_ex::Sorts::new(idx.into(), data.into()))
