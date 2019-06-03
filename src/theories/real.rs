@@ -3,8 +3,8 @@
 use std::fmt;
 
 #[macro_use]
-use theories::utils;
-use backends::backend::SMTNode;
+
+use crate::backends::backend::SMTNode;
 
 #[derive(Clone, Debug)]
 pub enum OpCodes {

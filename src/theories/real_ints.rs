@@ -3,8 +3,8 @@
 use std::fmt;
 
 #[macro_use]
-use theories::utils;
-use backends::backend::SMTNode;
+
+use crate::backends::backend::SMTNode;
 
 #[derive(Clone, Debug)]
 pub enum OpCodes {
@@ -58,7 +58,7 @@ pub enum Sorts {
 
 impl fmt::Display for Sorts {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match *self {
+        let _s = match *self {
             Sorts::Real => "Real",
             Sorts::Int => "Int"
         };

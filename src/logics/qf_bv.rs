@@ -5,8 +5,8 @@
 
 use std::fmt;
 
-use theories::{bitvec, core};
-use backends::backend::{Logic, SMTNode};
+use crate::theories::{bitvec, core};
+use crate::backends::backend::{Logic, SMTNode};
 
 define_sorts_for_logic!(QF_BV_Sorts,
                   BV -> bitvec::Sorts,

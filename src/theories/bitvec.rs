@@ -1,9 +1,9 @@
 //! Defines basic operations defined under FixedSizeBitVectors theory in SMTLIB2.
 
-use std::fmt::Debug;
+
 use std::fmt;
 
-use backends::backend::SMTNode;
+use crate::backends::backend::SMTNode;
 
 #[macro_export]
 macro_rules! bv_const {

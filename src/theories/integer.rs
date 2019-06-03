@@ -1,11 +1,11 @@
 //! Defines basic operations defined under Int theory in SMTLIB2.
 
 use std::fmt;
-use std::fmt::Debug;
+
 
 #[macro_use]
-use theories::utils;
-use backends::backend::SMTNode;
+
+use crate::backends::backend::SMTNode;
 
 #[derive(Clone, Debug)]
 pub enum OpCodes {

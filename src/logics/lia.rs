@@ -4,8 +4,8 @@
 
 use std::fmt;
 
-use theories::{integer, core};
-use backends::backend::{Logic, SMTNode};
+use crate::theories::{integer, core};
+use crate::backends::backend::{Logic, SMTNode};
 
 define_sorts_for_logic!(LIA_Sorts,
                         Int -> integer::Sorts,

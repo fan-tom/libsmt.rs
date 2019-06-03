@@ -1,6 +1,6 @@
 //! Struct and methods to interact with the boolector solver.
 
-use backends::smtlib2::SMTProc;
+use crate::backends::smtlib2::SMTProc;
 use std::process::{Child, Command, Stdio};
 
 #[derive(Default)]
@@ -32,12 +32,12 @@ impl SMTProc for Boolector {
 
 #[cfg(test)]
 mod test {
-    use backends::backend::*;
-    use backends::smtlib2::*;
+    use crate::backends::backend::*;
+    use crate::backends::smtlib2::*;
     use super::*;
-    use theories::bitvec;
-    use theories::{core, integer};
-    use logics::{lia, qf_bv};
+    use crate::theories::bitvec;
+    use crate::theories::{core};
+    use crate::logics::{qf_bv};
 
     #[test]
     fn test_bl_bitvec() {
