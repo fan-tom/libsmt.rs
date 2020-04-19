@@ -3,13 +3,14 @@
 #[macro_export]
 macro_rules! define_sorts_for_logic {
     ($logic: ident, $($variant: ident -> $sort: ty),*) => {
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Debug)]
         pub enum $logic {
             $(
                 $variant($sort),
             )*
         }
-        
+
         $(
             impl Into<$logic> for $sort {
                 fn into(self) -> $logic {
@@ -34,13 +35,14 @@ macro_rules! define_sorts_for_logic {
 #[macro_export]
 macro_rules! define_fns_for_logic {
     ($logic: ident, map { $($variant: ident -> $sort: ty),* }, obool { $($ff: pat => $b: expr),* }) => {
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Debug)]
         pub enum $logic {
             $(
                 $variant($sort),
             )*
         }
-        
+
         $(
             impl Into<$logic> for $sort {
                 fn into(self) -> $logic {
@@ -92,6 +94,7 @@ macro_rules! define_fns_for_logic {
 #[macro_export]
 macro_rules! define_logic {
     ($logic: ident, $op: ident, $sorts: ty, map { $($fv: pat => $rt: path),* }) => {
+        #[allow(non_camel_case_types)]
         #[derive(Clone, Copy, Debug)]
         pub struct $logic;
 

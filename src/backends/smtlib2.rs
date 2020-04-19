@@ -6,7 +6,6 @@
 use std::process::{Child};
 use std::collections::{HashMap};
 use std::io::{Read, Write};
-
 use regex::Regex;
 
 use petgraph::graph::{Graph, NodeIndex};
@@ -15,6 +14,12 @@ use petgraph::visit::EdgeRef;
 
 use backends::backend::{Logic, SMTBackend, SMTNode, SMTResult};
 use super::backend::SMTRes;
+
+macro_rules! must {
+    ($e: expr) => {
+        match $e { Err(_) => panic!("write failed"), Ok(_) => {} }
+    }
+}
 
 /// Trait that needs to be implemented in order to support a new solver. `SMTProc` is short for
 /// "SMT Process".
@@ -250,7 +255,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
             return;
         }
         let logic = self.logic.unwrap().clone();
-        smt_proc.write(format!("(set-logic {})\n", logic));
+        must!(smt_proc.write(format!("(set-logic {})\n", logic)));
     }
 
     fn assert<T: Into<L::Fns>>(&mut self, assert: T, ops: &[Self::Idx]) -> Self::Idx {
@@ -300,14 +305,37 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         // If the VC was satisfyable get the model
         match check_sat {
             SMTRes::Sat(ref res, _) => {
-                smt_proc.write("(get-model)\n".to_owned());
+                must!(smt_proc.write("(get-model)\n".to_owned()));
+                // XXX: For some reason we need two reads here in order to get the result from
+                // the SMT solver. Need to look into the reason for this. This might stop
+                // working in the
+                // future.
+                //let _ = smt_proc.read();
                 smt_proc.proc_specific_read();
                 let read_result = smt_proc.read_getmodel_output();
+                let re = Regex::new(r"\s+\(define-fun (?P<var>[0-9a-zA-Z_]+) \(\) [(]?[ _a-zA-Z0-9]+[)]?\n\s+(?P<val>([0-9]+|#x[0-9a-f]+|#b[01]+))")
+                             .unwrap();
+
+                for caps in re.captures_iter(&read_result) {
+                    // Here the caps.name("val") can be a hex value, or a binary value or a decimal
+                    // value. We need to parse the output to a u64 accordingly.
+                    let val_str = caps.name("val").unwrap();
+                    let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
+                                  u64::from_str_radix(&val_str[2..], 16)
+                              } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
+                                  u64::from_str_radix(&val_str[2..], 2)
+                              } else {
+                                  val_str.parse::<u64>()
+                              }
+                              .unwrap();
+                    let vname = caps.name("var").unwrap();
+                    result.insert(self.var_map[vname].0.clone(), val);
+
+                }
                 return (Ok(result), SMTRes::Sat(res.clone(), Some(read_result)));
             },
             _ => {}
         }
-
         (Ok(result), check_sat.clone())
     }
 }
