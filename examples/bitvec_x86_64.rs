@@ -16,7 +16,7 @@
 //   mov [rax], rsi
 //   ret
 
-extern crate libsmt;
+extern crate rustproof_libsmt as libsmt;
 
 use libsmt::backends::smtlib2::*;
 use libsmt::backends::backend::*;
@@ -83,7 +83,7 @@ fn main() {
     solver.assert(core::OpCodes::Cmp, &[sel, const_badcafe]);
 
     // Check if we have a satisfying solution.
-    if let Ok(result) = solver.solve(&mut z3) {
+    if let Ok(result) = solver.solve(&mut z3, false).0 {
         println!("Out-Of-Bounds Write detected!");
         println!("rdi: 0x{:x}; rsi: 0x{:x};", result[&rdi], result[&rsi]);
     } else {

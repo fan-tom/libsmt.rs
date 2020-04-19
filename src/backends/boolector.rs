@@ -50,7 +50,7 @@ mod test {
         solver.assert(core::OpCodes::Cmp, &[x, c]);
         let x_xor_y = solver.assert(bitvec::OpCodes::BvXor, &[x, y]);
         solver.assert(core::OpCodes::Cmp, &[x_xor_y, c8]);
-        let result = solver.solve(&mut bl).unwrap();
+        let result = solver.solve(&mut bl, false).0.unwrap();
         assert_eq!(result[&x], 10);
         assert_eq!(result[&y], 2);
     }

@@ -19,7 +19,7 @@
 
 
 // Import the libsmt library
-extern crate libsmt;
+extern crate rustproof_libsmt as libsmt;
 
 use libsmt::backends::smtlib2::*;
 use libsmt::backends::backend::*;
@@ -52,7 +52,7 @@ fn main() {
     let _  = solver.assert(integer::OpCodes::Gt, &[x, int1]); 
     let _  = solver.assert(integer::OpCodes::Gt, &[y, int1]);
 
-    if let Ok(result) = solver.solve(&mut z3) {
+    if let Ok(result) = solver.solve(&mut z3, false).0 {
         println!("x: {}; y: {}", result[&x], result[&y]);
     } else {
         println!("No solutions for x and y found for given set of constraints");

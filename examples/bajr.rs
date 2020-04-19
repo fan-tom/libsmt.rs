@@ -19,7 +19,7 @@
 
 
 // Import the libsmt library
-extern crate libsmt;
+extern crate rustproof_libsmt as libsmt;
 
 use libsmt::backends::smtlib2::*;
 use libsmt::backends::backend::*;
@@ -62,7 +62,7 @@ fn main() {
 //          SMTRes::Error(..) => { println!("{}", z3.read()); },
 //      }
 
-    let (res, check) = solver.solve(&mut z3);
+    let (res, check) = solver.solve(&mut z3, false);
     match res {
         Ok(..) => {
             match check {
