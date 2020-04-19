@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use backends::backend::SMTNode;
+use crate::backends::backend::SMTNode;
 
 #[macro_export]
 macro_rules! bv_const {

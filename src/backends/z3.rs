@@ -18,9 +18,8 @@ use std::path::Path;
 */
 //f2
 
-use backends::smtlib2::SMTProc;
+use crate::backends::smtlib2::SMTProc;
 use std::process::{Child, Command, Stdio};
-
 
 #[derive(Default)]
 pub struct Z3 {
@@ -47,16 +46,21 @@ impl SMTProc for Z3 {
         }
         self.fd.as_mut().unwrap()
     }
+
+    // Because of the z3 buffering issue.
+    fn proc_specific_read(&mut self) {
+        self.read();
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use backends::backend::*;
-    use backends::smtlib2::*;
+    use crate::backends::backend::*;
+    use crate::backends::smtlib2::*;
     use super::*;
-    use theories::bitvec;
-    use theories::{core, integer};
-    use logics::{lia, qf_bv};
+    use crate::theories::bitvec;
+    use crate::theories::{core, integer};
+    use crate::logics::{lia, qf_bv};
 
     #[test]
     fn test_z3_int() {
@@ -68,8 +72,8 @@ mod test {
         solver.assert(core::OpCodes::Cmp, &[x, c]);
         solver.assert(integer::OpCodes::Gt, &[x, y]);
         let result = solver.solve(&mut z3).unwrap();
-        assert_eq!(result[&x], 10);
         assert_eq!(result[&y], 9);
+        assert_eq!(result[&x], 10);
     }
 
     #[test]

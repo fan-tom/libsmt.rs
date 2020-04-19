@@ -7,8 +7,11 @@ use std::process::{Child};
 use std::collections::{HashMap};
 use std::io::{Read, Write};
 
+use regex::Regex;
+
 use petgraph::graph::{Graph, NodeIndex};
 use petgraph::EdgeDirection;
+use petgraph::visit::EdgeRef;
 
 use backends::backend::{Logic, SMTBackend, SMTNode, SMTResult};
 use super::backend::SMTRes;
@@ -38,6 +41,11 @@ pub trait SMTProc {
             stdin.flush().expect("Failed to flush stdin");
         }
         Ok(())
+    }
+
+    // Helper function to insert a process specific read if needed
+    // at places where buffering is an issue.
+    fn proc_specific_read(&mut self) {
     }
 
     fn read(&mut self) -> String {
@@ -144,11 +152,22 @@ impl<L: Logic> SMTLib2<L> {
         solver
     }
 
+    pub fn get_node_info(&self, ni: NodeIndex) -> &L::Fns {
+        self.gr.node_weight(ni).unwrap()
+    }
+
+    pub fn get_operands(&self, ni: NodeIndex) -> Vec<NodeIndex> {
+        self.gr.neighbors_directed(ni, EdgeDirection::Outgoing)
+            .collect::<Vec<_>>()
+    }
+
     // Recursive function that builds up the assertion string from the tree.
     pub fn expand_assertion(&self, ni: NodeIndex) -> String {
         let mut children = self.gr
                                .edges_directed(ni, EdgeDirection::Outgoing)
-                               .map(|(other, edge)| {
+                               .map(|edge_ref| {
+                                   let edge = edge_ref.weight();
+                                   let other = edge_ref.target();
                                    match *edge {
                                        EdgeData::EdgeOrder(ref i) => (other, *i),
                                    }
@@ -177,6 +196,33 @@ impl<L: Logic> SMTLib2<L> {
 
     pub fn new_const<T: Into<L::Fns>>(&mut self, cval: T) -> NodeIndex {
         self.gr.add_node(cval.into())
+    }
+
+    pub fn generate_asserts(&self, debug: bool) -> String {
+        // Write out all variable definitions.
+        let mut decls = Vec::new();
+        for (name, val) in &self.var_map {
+            let ni = &val.0;
+            let ty = &val.1;
+            if self.gr[*ni].is_var() {
+                decls.push(format!("(declare-fun {} () {})\n", name, ty));
+            }
+        }
+        // Identify root nodes and generate the assertion strings.
+        let mut assertions = Vec::new();
+        for idx in self.gr.node_indices() {
+            if self.gr.edges_directed(idx, EdgeDirection::Incoming).collect::<Vec<_>>().is_empty() {
+                if self.gr[idx].is_fn() && self.gr[idx].is_bool() {
+                    assertions.push(format!("(assert {})\n", self.expand_assertion(idx)));
+                }
+            }
+        }
+        let mut result = String::new();
+        for w in decls.iter().chain(assertions.iter()) {
+            if debug { print!("{}", w) };
+            result = format!("{}{}", result, w)
+        }
+        result
     }
 }
 
@@ -217,30 +263,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
     }
 
     fn check_sat<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> SMTRes {
-        // Write out all variable definitions.
-        let mut decls = Vec::new();
-        for (name, val) in &self.var_map {
-            let ni = &val.0;
-            let ty = &val.1;
-            if self.gr[*ni].is_var() {
-                decls.push(format!("(declare-fun {} () {})\n", name, ty));
-            }
-        }
-        // Identify root nodes and generate the assertion strings.
-        let mut assertions = Vec::new();
-        for idx in self.gr.node_indices() {
-            if self.gr.edges_directed(idx, EdgeDirection::Incoming).collect::<Vec<_>>().is_empty() {
-                if self.gr[idx].is_fn() {
-                    assertions.push(format!("(assert {})\n", self.expand_assertion(idx)));
-                }
-            }
-        }
-
-        for w in decls.iter().chain(assertions.iter()) {
-            if debug { print!("{}", w) };
-            smt_proc.write(w);
-        }
-
+        smt_proc.write(self.generate_asserts(debug));
         smt_proc.write("(check-sat)\n".to_owned());
         let read = smt_proc.read_checksat_output();
         if &read == "sat" {
@@ -252,6 +275,24 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         }
     }
 
+    fn simplify<S: SMTProc>(&mut self, smt_proc: &mut S, ni: Self::Idx) -> SMTResult<u64> {
+        smt_proc.write(format!("(simplify {})\n", self.expand_assertion(ni)));
+
+        smt_proc.proc_specific_read();
+        let val_str = smt_proc.read();
+
+        let val = if val_str.len() > 2 && &val_str[0..2] == "#x" {
+                          u64::from_str_radix(&val_str[2..], 16)
+                      } else if val_str.len() > 2 && &val_str[0..2] == "#b" {
+                          u64::from_str_radix(&val_str[2..], 2)
+                      } else {
+                          val_str.parse::<u64>()
+                      }
+                      .unwrap();
+
+        Ok(val)
+    }
+
     // TODO: Return type information along with the value.
     fn solve<S: SMTProc>(&mut self, smt_proc: &mut S, debug: bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes) {
         let mut result = HashMap::new();
@@ -260,6 +301,7 @@ impl<L: Logic> SMTBackend for SMTLib2<L> {
         match check_sat {
             SMTRes::Sat(ref res, _) => {
                 smt_proc.write("(get-model)\n".to_owned());
+                smt_proc.proc_specific_read();
                 let read_result = smt_proc.read_getmodel_output();
                 return (Ok(result), SMTRes::Sat(res.clone(), Some(read_result)));
             },

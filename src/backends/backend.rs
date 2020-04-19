@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt;
 
-use backends::smtlib2::SMTProc;
+
+use crate::backends::smtlib2::SMTProc;
 
 #[derive(Clone, Debug)]
 pub enum SMTError {
@@ -49,23 +50,24 @@ pub trait SMTBackend {
     type Idx: Debug + Clone;
     type Logic: Logic;
 
-    fn set_logic<S: SMTProc>(&mut self, &mut S);
+    fn set_logic<S: SMTProc>(&mut self, _: &mut S);
     //fn declare_fun<T: AsRef<str>>(&mut self, Option<T>, Option<Vec<Type>>, Type) -> Self::Idx;
 
-    fn new_var<T, P>(&mut self, Option<T>, P) -> Self::Idx
+    fn new_var<T, P>(&mut self, _: Option<T>, _: P) -> Self::Idx
         where T: AsRef<str>,
               P: Into<<<Self as SMTBackend>::Logic as Logic>::Sorts>;
 
-    fn assert<T: Into<<<Self as SMTBackend>::Logic as Logic>::Fns>>(&mut self, T, &[Self::Idx]) -> Self::Idx;
-    fn check_sat<S: SMTProc>(&mut self, &mut S, bool) -> SMTRes;
-    fn solve<S: SMTProc>(&mut self, &mut S, bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes);
+    fn assert<T: Into<<<Self as SMTBackend>::Logic as Logic>::Fns>>(&mut self, _: T, _: &[Self::Idx]) -> Self::Idx;
+    fn simplify<S: SMTProc>(&mut self, _: &mut S, _: Self::Idx) -> SMTResult<u64>;
+    fn check_sat<S: SMTProc>(&mut self, _: &mut S, bool) -> SMTRes;
+    fn solve<S: SMTProc>(&mut self, _: &mut S, bool) -> (SMTResult<HashMap<Self::Idx, u64>>, SMTRes);
 }
 
 pub trait Logic: fmt::Display + Clone + Copy {
     type Fns: SMTNode + fmt::Display + Debug + Clone;
     type Sorts: fmt::Display + Debug + Clone;
 
-    fn free_var<T: AsRef<str>>(T, Self::Sorts) -> Self::Fns;
+    fn free_var<T: AsRef<str>>(_: T, _: Self::Sorts) -> Self::Fns;
 }
 
 pub trait SMTNode: fmt::Display {
@@ -76,5 +78,10 @@ pub trait SMTNode: fmt::Display {
     /// Returns true if the node is a function
     fn is_fn(&self) -> bool {
         !self.is_var() && !self.is_const()
+    }
+
+    // FIXME
+    fn is_bool(&self) -> bool {
+        false
     }
 }

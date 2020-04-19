@@ -10,6 +10,7 @@ addons:
       - libdw-dev
       - binutils-dev
       - wget
+      - bzip2
 
 matrix:
   fast_finish: true
@@ -42,6 +43,12 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget "https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/z3-4.4.1-x64-ubuntu-14.04.zip" ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then unzip z3-4.4.1-x64-ubuntu-14.04.zip ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$PATH:./z3-4.4.1-x64-ubuntu-14.04/bin/ ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget "http://fmv.jku.at/boolector/boolector-2.4.1-with-lingeling-bbc.tar.bz2" ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bzip2 -d boolector-2.4.1-with-lingeling-bbc.tar.bz2 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xvf boolector-2.4.1-with-lingeling-bbc.tar ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make -C boolector-2.4.1-with-lingeling-bbc ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$PATH:./boolector-2.4.1-with-lingeling-bbc/boolector/bin/ ; fi
+
 env:
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
