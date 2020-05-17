@@ -89,6 +89,9 @@ pub trait SMTProc {
             loop {
                 for (_,c) in stdout.bytes().enumerate() {
                     let chr = c.unwrap() as char;
+                    if chr == '\n' {
+                        continue
+                    }
                     buf.push(chr);
                     if buf.ends_with("sat") {
                         return buf;
@@ -216,7 +219,7 @@ impl<L: Logic> SMTLib2<L> {
         // Identify root nodes and generate the assertion strings.
         let mut assertions = Vec::new();
         for idx in self.gr.node_indices() {
-            if self.gr.edges_directed(idx, EdgeDirection::Incoming).collect::<Vec<_>>().is_empty() {
+            if self.gr.edges_directed(idx, EdgeDirection::Incoming).count() == 0 {
                 if self.gr[idx].is_fn() && self.gr[idx].is_bool() {
                     assertions.push(format!("(assert {})\n", self.expand_assertion(idx)));
                 }
