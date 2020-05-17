@@ -16,7 +16,8 @@ pub enum OpCodes {
     Distinct,
     ITE,
     Const(bool),
-    FreeVar(String)
+    FreeVar(String),
+    Fun(String)
 }
 
 impl fmt::Display for OpCodes {
@@ -32,6 +33,7 @@ impl fmt::Display for OpCodes {
             OpCodes::ITE => "ite".to_owned(),
             OpCodes::Const(val) => format!("{}", val),
             OpCodes::FreeVar(ref s) => s.clone(),
+            OpCodes::Fun(ref s) => s.clone(),
         };
         write!(f, "{}", s)
     }
